@@ -1,0 +1,32 @@
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: #f7f8fb;
+  color: #1f2937;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.card {
+  border: 0;
+  border-radius: 1rem;
+  box-shadow: 0 0.25rem 1rem rgba(23, 39, 52, 0.08);
+}
+
+.navbar {
+  padding: 0.75rem 1rem;
+}
+
+.table th {
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
