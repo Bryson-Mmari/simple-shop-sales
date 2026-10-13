@@ -29,6 +29,8 @@ export async function makeRequest(options: RequestOptions): Promise<{ status: nu
     },
     write() {},
     end() {},
+    removeHeader() {},
+    appendHeader() {},
   } as unknown as ServerResponse
 
   if (options.cookies) {
@@ -43,6 +45,9 @@ export async function makeRequest(options: RequestOptions): Promise<{ status: nu
     throw err
   }
   ;(globalThis as any).getRouterParam = () => undefined
+  ;(globalThis as any).getQuery = (ev:any) => ev?.query ?? {}
+  ;(globalThis as any).getValidatedQuery = (ev:any) => ev?.query ?? {}
+  ;(globalThis as any).readBody = async (ev:any) => ev?.body ?? ev?.req?.body ?? req?.body ?? options.body
 
   let handler
   try {
@@ -89,21 +94,24 @@ export async function makeRequest(options: RequestOptions): Promise<{ status: nu
   }
 
   try {
-    const event: any = { node: { req, res }, req, res }
-    event.body = options.body
-    req.body = options.body
-    req._body = true
+    if (options.body !== undefined) {
+      req.body = options.body
+      req.rawBody = Buffer.from(JSON.stringify(options.body))
+      ;(req as any)._body = true
+    }
+    const event: any = { node: { req, res }, req, res, method: options.method }
+    event.body = req.body
     event.context = event.context || {}
-    // Monkey patch readBody in the h3 module used by the handler
     const h3 = await import('h3')
     const orig = h3.readBody
-    try { Object.defineProperty(h3, 'readBody', {value: async () => options.body, configurable: true, writable: true}) } catch {}
     try {
-      const result = await handler.default(event)
-      return { status: res.statusCode, body: result, headers: res.headers }
-    } finally {
-      try { Object.defineProperty(h3, 'readBody', {value: orig, configurable: true, writable: true}) } catch {}
-    }
+      Object.defineProperty(h3, 'readBody', { value: async () => req.body, configurable: true, writable: true })
+    } catch {}
+    const result = await handler.default(event)
+    try {
+      Object.defineProperty(h3, 'readBody', { value: orig, configurable: true, writable: true })
+    } catch {}
+    return { status: res.statusCode, body: result, headers: res.headers }
   } catch (error: any) {
     if (error.statusCode) {
       return { status: error.statusCode, body: error, headers: res.headers }

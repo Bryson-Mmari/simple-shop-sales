@@ -20,15 +20,15 @@ Priority: **P0** critical/blocking · **P1** high · **P2** medium · **P3** low
 - **Evidence:** 19 tests pass; typecheck exit 0; build exit 0; dev DB SHA-256 `d50186b5…` unchanged; run also passed with a misleading `NUXT_DATABASE_PATH` pointing at the dev DB. Re-verified 2026-10-13 with `strace -f`: only `/tmp/simple-shop-sales-tests/worker-{1..4}.sqlite` was opened; `.data/simple-shop.sqlite` (+`-wal`/`-shm`) hashes and mtimes unchanged across `test`/`typecheck`/`build` even with two `nuxt dev` servers running on the default DB.
 - **Follow-up (not T0.1):** per-file reset/reseed of the shared worker temp DB can be added with the T0.2 harness if needed.
 
-### T0.2 — Integration/security test harness
+### T0.2 — Integration/security test harness — COMPLETE (verified 2026-10-13)
 - **Area:** Testing infrastructure
-- **Status:** Not implemented
-- **Missing work:** Add a harness to invoke Nitro handlers (e.g. `@nuxt/test-utils` or direct handler invocation with mocked `H3Event`) plus a helper to create seeded users/sessions.
+- **Status:** Complete & verified. Added lightweight request harness and helpers to create users/sessions; seeded integration/security tests using direct handler invocation with mocked H3 events.
+- **Implemented work:** `tests/helpers/db.ts` (table clearing), `tests/helpers/auth.ts` (users/sessions), `tests/helpers/request.ts` (simple route invoker for API handlers), `tests/helpers/index.ts`; `tests/security/route-auth.spec.ts` (401/200 on /api/me, login cases), `tests/security/csrf-and-abac.spec.ts` (CSRF enforcement, ABAC deny, branch scoping), `tests/security/harness-selftest.spec.ts` (harness sanity).
 - **Dependencies:** T0.1
 - **Priority:** P1
-- **Files:** new `tests/helpers/*`, `package.json`
-- **Acceptance criteria:** At least one authenticated route test and one 401 test pass.
-- **Tests:** Harness self-test.
+- **Files:** `tests/helpers/*`, `tests/security/*`
+- **Acceptance criteria (met):** Authenticated route returns 200; unauthenticated returns 401; at least 9 security harness tests pass.
+- **Tests:** 3 security test files, 9 tests pass; all existing tests still pass (total 7 files, 28 tests).
 
 ---
 

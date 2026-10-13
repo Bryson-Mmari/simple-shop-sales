@@ -13,7 +13,7 @@ At the time of this audit the project is a functional single-branch MVP: authent
 
 | Check | Command | Result |
 | --- | --- | --- |
-| Unit tests | `pnpm test` | **PASS** — 4 files, 19 tests passed (~1s), running against an isolated temp DB (T0.1) |
+| Unit tests | `pnpm test` | **PASS** — 7 files, 28 tests passed, running against isolated temp DBs (T0.1 + T0.2) |
 | Type checking | `pnpm typecheck` | **PASS** — exit code 0, no diagnostics |
 | Production build | `pnpm build` | **PASS** — exit code 0, `.output/` produced in ~12s |
 | Live DB inspection | read-only `better-sqlite3` query against `.data/simple-shop.sqlite` | 14 tables present, foreign keys enabled, 1 user, 1 branch, 2 products, 1 customer, 9 policies |
