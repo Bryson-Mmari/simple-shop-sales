@@ -2,8 +2,8 @@ import { randomBytes, randomUUID } from 'node:crypto'
 import { eq, and, gt } from 'drizzle-orm'
 import { getCookie, setCookie, deleteCookie, type H3Event } from 'h3'
 import argon2 from 'argon2'
-import { db } from '../database'
-import { sessions, users } from '../database/schema'
+import { db } from '../database/index.ts'
+import { sessions, users } from '../database/schema.ts'
 
 export const SESSION_COOKIE = 'shop_session'
 export const CSRF_COOKIE = 'shop_csrf'
@@ -18,8 +18,8 @@ export async function verifyPassword(password: string, passwordHash: string) {
 
 export function generateSessionId() {
   return randomBytes(32).toString('hex')
-}
 
+}
 export function generateCsrfToken() {
   return randomBytes(24).toString('hex')
 }

@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto'
-import { db } from './index'
-import { abacPolicies, branches, products, users } from './schema'
+import { db } from './index.ts'
+import { abacPolicies, branches, products, users } from './schema.ts'
 import { eq } from 'drizzle-orm'
-import { hashPassword } from '../auth'
+import { hashPassword } from '../auth/index.ts'
 
 export async function seedPrimaryData() {
   const branchCount = db.select().from(branches).all().length
@@ -16,19 +16,68 @@ export async function seedPrimaryData() {
     }).run()
   }
 
-  const userCount = db.select().from(users).all().length
-  if (userCount === 0 && process.env.NUXT_BOOTSTRAP_EMAIL && process.env.NUXT_BOOTSTRAP_PASSWORD) {
-    const passwordHash = await hashPassword(process.env.NUXT_BOOTSTRAP_PASSWORD)
+  // Admin user from environment variables or fallback
+  let adminEmail = 'admin@example.com'
+  let adminPassword = 'adminpassword'
+  if (process.env.NUXT_BOOTSTRAP_EMAIL && process.env.NUXT_BOOTSTRAP_PASSWORD) {
+    adminEmail = process.env.NUXT_BOOTSTRAP_EMAIL
+    adminPassword = process.env.NUXT_BOOTSTRAP_PASSWORD
+  }
+  const adminExisting = db.select().from(users).where(eq(users.email, adminEmail)).get()
+  if (!adminExisting) {
+    const adminPasswordHash = await hashPassword(adminPassword)
     db.insert(users).values({
       id: randomUUID(),
-      email: process.env.NUXT_BOOTSTRAP_EMAIL,
-      passwordHash,
+      email: adminEmail,
+      passwordHash: adminPasswordHash,
       firstName: 'System',
       lastName: 'Administrator',
       accountStatus: 'active',
       departmentId: 'management',
       clearanceLevel: 5,
       discountLimit: 30,
+      branchId: 'branch-main',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }).run()
+  }
+
+  // Regular user with clearance level 2
+  const user2Email = 'user2@example.com'
+  const user2Existing = db.select().from(users).where(eq(users.email, user2Email)).get()
+  if (!user2Existing) {
+    const user2PasswordHash = await hashPassword('User2Pass123!')
+    db.insert(users).values({
+      id: randomUUID(),
+      email: user2Email,
+      passwordHash: user2PasswordHash,
+      firstName: 'User',
+      lastName: 'Two',
+      accountStatus: 'active',
+      departmentId: 'sales',
+      clearanceLevel: 2,
+      discountLimit: 10,
+      branchId: 'branch-main',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }).run()
+  }
+
+  // Manager user with clearance level 4
+  const user3Email = 'user3@example.com'
+  const user3Existing = db.select().from(users).where(eq(users.email, user3Email)).get()
+  if (!user3Existing) {
+    const user3PasswordHash = await hashPassword('User3Pass123!')
+    db.insert(users).values({
+      id: randomUUID(),
+      email: user3Email,
+      passwordHash: user3PasswordHash,
+      firstName: 'User',
+      lastName: 'Three',
+      accountStatus: 'active',
+      departmentId: 'management',
+      clearanceLevel: 4,
+      discountLimit: 20,
       branchId: 'branch-main',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -191,4 +240,11 @@ export async function seedPrimaryData() {
       }).run()
     }
   }
+}
+
+if (import.meta.main) {
+  seedPrimaryData().catch(err => {
+    console.error(err);
+    process.exit(1);
+  });
 }

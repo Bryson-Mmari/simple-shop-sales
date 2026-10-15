@@ -8,7 +8,7 @@ Priority: **P0** critical/blocking · **P1** high · **P2** medium · **P3** low
 
 ## Phase 0 — Test safety net (enables safe change)
 
-### T0.1 — Isolate tests from the developer database — COMPLETE (verified 2026-10-13)
+### T0.1 — Isolate tests from the developer database — COMPLETE (verified 2026-10-15)
 - **Area:** Testing infrastructure
 - **Status:** Complete & verified. Tests now force `NUXT_DATABASE_PATH` to a per-worker temp file before the app DB module loads; no `server/` code changed.
 - **Implemented work:** `vitest.config.ts` registers `globalSetup` (`tests/global-setup.ts`) and `setupFiles` (`tests/setup.ts`); `tests/support/test-database.ts` computes the temp path; `tests/test-isolation.spec.ts` guards the behavior.
@@ -17,7 +17,7 @@ Priority: **P0** critical/blocking · **P1** high · **P2** medium · **P3** low
 - **Files:** `vitest.config.ts`, `tests/setup.ts`, `tests/global-setup.ts`, `tests/support/test-database.ts`, `tests/test-isolation.spec.ts`
 - **Acceptance criteria (met):** `pnpm test` runs against a throwaway DB; developer `.data` file unchanged (identical SHA-256 before/after); all 16 existing tests still pass (now 19 with guards).
 - **Tests:** `tests/test-isolation.spec.ts` asserts `getDatabasePath()` is the temp path and the schema exists.
-- **Evidence:** 19 tests pass; typecheck exit 0; build exit 0; dev DB SHA-256 `d50186b5…` unchanged; run also passed with a misleading `NUXT_DATABASE_PATH` pointing at the dev DB. Re-verified 2026-10-13 with `strace -f`: only `/tmp/simple-shop-sales-tests/worker-{1..4}.sqlite` was opened; `.data/simple-shop.sqlite` (+`-wal`/`-shm`) hashes and mtimes unchanged across `test`/`typecheck`/`build` even with two `nuxt dev` servers running on the default DB.
+- **Evidence:** 19 tests pass; typecheck exit 0; build exit 0; dev DB SHA-256 `7380c33e…` unchanged; run also passed with a misleading `NUXT_DATABASE_PATH` pointing at the dev DB. Re-verified 2026-10-13 with `strace -f`: only `/tmp/simple-shop-sales-tests/worker-{1..4}.sqlite` was opened; `.data/simple-shop.sqlite` (+`-wal`/`-shm`) hashes and mtimes unchanged across `test`/`typecheck`/`build` even with two `nuxt dev` servers running on the default DB. Further re-verified 2026-10-15 by running `pnpm test`, `pnpm typecheck`, `pnpm build` and confirming the development database files remained unchanged.
 - **Follow-up (not T0.1):** per-file reset/reseed of the shared worker temp DB can be added with the T0.2 harness if needed.
 
 ### T0.2 — Integration/security test harness — COMPLETE (verified 2026-10-13)

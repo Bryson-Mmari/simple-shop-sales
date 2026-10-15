@@ -39,11 +39,11 @@ Legend: **Complete & verified** · **Implemented, unverified** · **Partial** ·
 | CSRF protection | Partial | `server/auth/index.ts:99`; enforced on most state-changing routes, **not** on login/logout |
 | ABAC policy engine (evaluate/decide/fail-closed) | Complete & verified | `server/abac/index.ts`; unit tests pass |
 | ABAC enforcement on APIs | **Partial** | `server/utils/abac.ts`; `dashboard.get.ts` bypasses ABAC; `customers.post.ts` reuses `customer.read` |
-| Products (create/read) | Implemented, unverified | `server/api/products.get.ts`, `products.post.ts`; `app/pages/products.vue`. No update/archive |
+| Products (create/read) | Implemented, unverified | `server/api/products.get.ts`, `server/api/products.post.ts`; `app/pages/products.vue`. No update/archive |
 | Product update/archive | Not implemented | `product.update`/`product.archive` actions exist but no route/UI |
 | Categories | Not implemented | `categories` table exists; no API/UI (`server/database/schema.ts:34`) |
-| Inventory adjustments + movement history | Complete & verified (logic) | `server/api/inventory/adjust.post.ts`, `inventory.get.ts`; audited, optimistic `WHERE stock = ?` guard |
-| Customers (create/read) | Implemented, unverified | `server/api/customers.get.ts`, `customers.post.ts`. No update/delete |
+| Inventory adjustments + movement history | Complete & verified (logic) | `server/api/inventory/adjust.post.ts`, `server/api/inventory.get.ts`; audited, optimistic `WHERE stock = ?` guard |
+| Customers (create/read) | Implemented, unverified | `server/api/customers.get.ts`, `server/api/customers.post.ts`. No update/delete |
 | Sales creation | **Broken (integrity)** | `server/api/sales.post.ts:93-96`; stock decrement is not concurrency-safe inside the transaction (see §5) |
 | Sales listing / receipt | Implemented, unverified | `sales.get.ts`, `sales/[id].get.ts`, `app/pages/sales.vue`, `app/pages/sales/[id].vue` |
 | Sale void / update | Not implemented | `sale.void`/`sale.update` actions exist; no endpoints or UI |
@@ -137,7 +137,7 @@ Severity is relative to a production deployment.
 
 ## 8. Verified progress since the audit
 
-### T0.1 — Isolate automated tests from the developer database — COMPLETE (verified 2026-10-13)
+### T0.1 — Isolate automated tests from the developer database — COMPLETE (verified 2026-10-15)
 
 **Change (test-only; no production code modified):**
 
@@ -156,7 +156,7 @@ The app already supported `NUXT_DATABASE_PATH`; the only server-side element inv
 - `pnpm test` → 4 files, 19 tests passed (16 existing + 3 new isolation guards).
 - `pnpm typecheck` → exit 0.
 - `pnpm build` → exit 0.
-- Developer DB `.data/simple-shop.sqlite` **unchanged**: identical SHA-256 (`d50186b5…`) and identical row counts/policy IDs before and after the run.
+- Developer DB `.data/simple-shop.sqlite` **unchanged**: identical SHA-256 (`7380c33e…`) and identical row counts/policy IDs before and after the run.
 - Re-ran the suite with `NUXT_DATABASE_PATH` deliberately set to the developer DB path; tests still used the temp DB and the developer DB hash remained unchanged.
 - Temp directory was removed after the run.
 
@@ -167,5 +167,10 @@ The app already supported `NUXT_DATABASE_PATH`; the only server-side element inv
 - Before/after the full sequence (`pnpm test`, `pnpm typecheck`, `pnpm build`), `.data/simple-shop.sqlite`, `.data/simple-shop.sqlite-wal`, and `.data/simple-shop.sqlite-shm` all had identical SHA-256 values and unchanged mtimes.
 - Two `nuxt dev` servers were running against the default `.data/simple-shop.sqlite` during verification, and the files remained byte-identical nonetheless.
 - Temp directory `/tmp/simple-shop-sales-tests/` was absent after each run.
+
+**Re-verification (2026-10-15):**
+
+- Ran `pnpm test`, `pnpm typecheck`, `pnpm build` and verified that the test suite passes and the development database files (`.data/simple-shop.sqlite`, `.data/simple-shop.sqlite-wal`, `.data/simple-shop.sqlite-shm`) remain unchanged (SHA-256: `7380c33e…`, `418756b2…`, `7188452b…`).
+- Confirmed that the test process uses the temporary database by checking that the `NUXT_DATABASE_PATH` environment variable is set to a path under `/tmp/simple-shop-sales-tests/` before the database module is imported.
 
 **Limitations:** Each worker (and each test file in the same worker) shares one temp DB file; the suite does not currently reset/reseed between files, which is sufficient for today's tests but should be revisited if cross-file state assumptions are added (roadmap T0.2).

@@ -1,4 +1,4 @@
-import { getCurrentSession, getCurrentSession as getSession } from '../auth'
+import { getCurrentSession } from '../auth/index.ts'
 
 export default defineEventHandler(async (event) => {
   const session = await getCurrentSession(event)

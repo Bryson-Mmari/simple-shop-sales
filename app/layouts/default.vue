@@ -11,7 +11,70 @@ const navItems = [
   { label: 'Policies', href: '/policies' },
 ]
 
+interface TestUser {
+  email: string
+  password: string
+  label: string
+}
+
+interface LoginResponse {
+  ok: boolean
+  user: {
+    id: string
+    email: string
+    firstName: string
+    lastName: string
+    departmentId: string | null
+    branchId: string
+    clearanceLevel: number
+    discountLimit: number
+    accountStatus: string
+  }
+  csrfToken: string
+}
+
+interface CsrfResponse {
+  ok: boolean
+  csrfToken: string
+  sessionActive: boolean
+}
+
 const user = ref<any>(null)
+const isDev = import.meta.env.DEV
+const testUsers: TestUser[] = [
+  { email: 'admin@example.com', password: 'adminpassword', label: 'Admin' },
+  { email: 'user2@example.com', password: 'User2Pass123!', label: 'User 2 (Clearance 2)' },
+  { email: 'user3@example.com', password: 'User3Pass123!', label: 'User 3 (Clearance 4)' },
+  { email: 'test@example.com', password: 'testpassword', label: 'Test (Clearance 3)' }, // from existing seed?
+]
+
+async function loginAs(userCred: TestUser) {
+  try {
+    // Get CSRF token
+    const csrfRes = await $fetch('/api/csrf')
+    const csrfToken = csrfRes.csrfToken
+    
+    // Login with credentials
+    const loginRes = await $fetch<LoginResponse>('/api/auth-login', {
+      method: 'POST',
+      body: {
+        email: userCred.email,
+        password: userCred.password,
+      },
+      headers: {
+        'X-CSRF-Token': csrfToken,
+      },
+    })
+    
+    // Update user ref and redirect to home
+    user.value = loginRes.user
+    await router.push('/')
+  } catch (error) {
+    console.error('Login failed:', error)
+    alert('Failed to login as ' + userCred.email)
+  }
+}
+}
 
 onMounted(async () => {
   try {
@@ -39,7 +102,7 @@ watch(
 )
 
 async function logout() {
-  await $fetch('/api/auth/logout', { method: 'POST' })
+  await $fetch('/api/auth-logout', { method: 'POST' })
   await router.push('/login')
 }
 </script>
@@ -63,6 +126,17 @@ async function logout() {
           <div v-if="user" class="d-flex align-items-center gap-3 text-white">
             <span class="small text-light">{{ user.firstName }} {{ user.lastName }}</span>
             <button class="btn btn-outline-light btn-sm" @click="logout">Logout</button>
+          </div>
+          <div v-if="isDev && user" class="d-flex align-items-center gap-2">
+            <small class="text-light me-2">Switch to:</small>
+            <button
+              v-for="tu in testUsers"
+              :key="tu.email"
+              class="btn btn-outline-secondary btn-sm"
+              @click="loginAs(tu)"
+            >
+              {{ tu.label }}
+            </button>
           </div>
         </div>
       </div>

@@ -1,9 +1,9 @@
 import { z } from 'zod'
 import { eq } from 'drizzle-orm'
 import { readBody } from 'h3'
-import { db } from '../../database'
-import { users } from '../../database/schema'
-import { createUserSession, setAuthCookies, verifyPassword } from '../../auth'
+import { db } from '../database/index.ts'
+import { users } from '../database/schema.ts'
+import { createUserSession, setAuthCookies, verifyPassword } from '../auth/index.ts'
 
 const loginSchema = z.object({
   email: z.string().email(),
